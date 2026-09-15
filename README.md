@@ -13,6 +13,17 @@ o = dclimplode.decompressobj()
 o.decompress(s) == b'hello'
 ```
 
+## Fork build fix
+
+This fork uses setuptools' standard MSVC compiler on Windows, removing the
+legacy override that failed with setuptools 81 and newer (`dry_run` missing).
+The compression API and Unix compiler customization are unchanged.
+
+Build with Python 3.14 and uv using `uv build`. Windows requires Visual Studio
+Build Tools with the Desktop development with C++ workload and a Windows SDK.
+The Build check workflow builds an sdist and wheel, installs the wheel, and runs
+the compression/decompression tests on Windows, macOS and Linux.
+
 ## tested versions
 
 - Python 2.7
