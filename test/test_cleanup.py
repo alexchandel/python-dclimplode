@@ -12,6 +12,7 @@ def test_discard_unfinished_stream(kind, tmp_path):
     # Isolate native crashes and count OS threads, which threading.enumerate misses.
     script = """
 import ctypes
+import gc
 import sys
 import time
 import dclimplode
@@ -32,6 +33,8 @@ def discard_streams():
             stream.decompress(b"\\x00\\x06" + b"\\x00" * 32)
             assert not stream.eof
         del stream
+    # PyPy does not destroy objects immediately when their reference count reaches zero.
+    gc.collect()
 
 def wait_for_thread_count_at_most(limit):
     deadline = time.monotonic() + 1
