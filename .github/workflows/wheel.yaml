@@ -41,6 +41,13 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-15-intel, windows-2022]
         python: [cp27, cp35, cp36, cp37, cp38]
+        exclude:
+          # cibuildwheel cannot target CPython 3.5 on macOS 11 or newer.
+          - os: macos-15-intel
+            python: cp35
+          # Windows CPython 2.7 requires a custom legacy compiler toolchain.
+          - os: windows-2022
+            python: cp27
 
     steps:
       - uses: actions/checkout@v7
