@@ -25,7 +25,9 @@ jobs:
         env:
           CIBW_BUILD: cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*
           CIBW_TEST_REQUIRES: pytest psutil pytest-xdist
-          CIBW_TEST_COMMAND: pytest -n 4 -q {project}/test
+          CIBW_TEST_COMMAND: >-
+            pytest -q {project}/test --deselect test/test_dclimplode.py::test_dclimplode
+            && pytest -n 4 -q {project}/test/test_dclimplode.py::test_dclimplode
       - uses: actions/upload-artifact@v7
         with:
           name: wheels-${{ runner.os }}-${{ runner.arch }}

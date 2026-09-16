@@ -47,4 +47,6 @@ jobs:
           uv pip install pytest psutil pytest-xdist
           uv pip install --no-index --find-links dist dclimplode
       - name: Test installed extension
-        run: uv run --no-project --no-sync pytest -n 4 -v test
+        run: uv run --no-project --no-sync pytest -v test --deselect test/test_dclimplode.py::test_dclimplode
+      - name: Test corpus modes in parallel
+        run: uv run --no-project --no-sync pytest -n 4 -v test/test_dclimplode.py::test_dclimplode
