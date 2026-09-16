@@ -24,8 +24,8 @@ jobs:
         run: uv build
       - name: Create test environment
         run: uv venv
-      - name: Install pytest
-        run: uv pip install pytest
+      - name: Install test dependencies
+        run: uv pip install pytest psutil
       - name: Install built wheel
         run: uv pip install --no-index --find-links dist dclimplode
       - name: Test installed extension

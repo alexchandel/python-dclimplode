@@ -14,6 +14,7 @@ const unsigned int SLEEP_US = 10;
 
 #include <chrono>
 #include <thread>
+// sleep_for is not a Windows pthread cancellation point; worker loops check explicitly.
 #define usleep(usec) std::this_thread::sleep_for(std::chrono::microseconds(usec))
 
 #if defined(_WIN32) || (!defined(__GNUC__) && !defined(__clang__))
@@ -58,10 +59,11 @@ public:
         if(dsize!=1024 && dsize!=2048 && dsize!=4096)throw std::invalid_argument(format("invalid dsize, must be 1024, 2048 or 4096 (%d)", dsize));
         outstr.reserve(65536);
     }
+    // Join cancelled workers before destroying the buffers they access.
     ~dclimplode_compressobj(){
         if(thread){
             pthread_cancel(thread);
-            pthread_detach(thread);
+            pthread_join(thread,NULL);
         }
     }
 
@@ -71,7 +73,7 @@ public:
     unsigned int get(char *buf, unsigned int size){
         if(offset == instr.size()){
             requireInput = true;
-            for(;!hasInput;)usleep(SLEEP_US);
+            for(;!hasInput;){pthread_testcancel();usleep(SLEEP_US);}
             requireInput = false;
             offset = 0;
         }
@@ -157,7 +159,7 @@ public:
     ~dclimplode_decompressobj_blast(){
         if(thread){
             pthread_cancel(thread);
-            pthread_detach(thread);
+            pthread_join(thread,NULL);
         }
     }
 
@@ -167,7 +169,7 @@ public:
     }
     unsigned int get(unsigned char **buf){
         requireInput = true;
-        for(;!hasInput;)usleep(SLEEP_US);
+        for(;!hasInput;){pthread_testcancel();usleep(SLEEP_US);}
         requireInput = false;
         hasInput = false;
         *buf = (unsigned char*)instr.data();
@@ -229,7 +231,7 @@ public:
     ~dclimplode_decompressobj_pklib(){
         if(thread){
             pthread_cancel(thread);
-            pthread_detach(thread);
+            pthread_join(thread,NULL);
         }
     }
 
@@ -239,7 +241,7 @@ public:
     unsigned int get(char *buf, unsigned int size){
         if(offset == instr.size()){
             requireInput = true;
-            for(;!hasInput;)usleep(SLEEP_US);
+            for(;!hasInput;){pthread_testcancel();usleep(SLEEP_US);}
             requireInput = false;
             offset = 0;
         }

@@ -17,6 +17,8 @@ o.decompress(s) == b'hello'
 
 This fork uses setuptools' standard MSVC compiler on Windows, removing the
 legacy override that failed with setuptools 81 and newer (`dry_run` missing).
+Discarding an unfinished stream also waits for its worker to exit before freeing
+its buffers, preventing leaked threads and use-after-free crashes on Windows.
 The compression API and Unix compiler customization are unchanged.
 
 Build with Python 3.14 and uv using `uv build`. Windows requires Visual Studio
