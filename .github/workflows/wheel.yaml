@@ -34,11 +34,12 @@ jobs:
           name: wheels-${{ runner.os }}-${{ matrix.python }}-${{ runner.arch }}
           path: wheelhouse/*.whl
 
-  legacy-linux:
-    runs-on: ubuntu-latest
+  legacy:
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-15-intel, windows-2022]
         python: [cp27, cp35, cp36, cp37, cp38]
 
     steps:
@@ -47,9 +48,9 @@ jobs:
           submodules: recursive
       - uses: pypa/cibuildwheel@v1.12.0
         env:
-          CIBW_BUILD: ${{ matrix.python }}-manylinux_x86_64
+          CIBW_BUILD: ${{ matrix.python }}-*
           CIBW_TEST_COMMAND: python {project}/test/legacy_smoke.py
       - uses: actions/upload-artifact@v7
         with:
-          name: wheels-Linux-${{ matrix.python }}-X64
+          name: wheels-${{ runner.os }}-${{ matrix.python }}-${{ runner.arch }}
           path: wheelhouse/*.whl
