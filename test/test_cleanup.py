@@ -13,6 +13,7 @@ def test_discard_unfinished_stream(kind, tmp_path):
     script = """
 import ctypes
 import sys
+import time
 import dclimplode
 import psutil
 
@@ -32,12 +33,22 @@ def discard_streams():
             assert not stream.eof
         del stream
 
+def wait_for_thread_count_at_most(limit):
+    deadline = time.monotonic() + 1
+    while True:
+        count = process.num_threads()
+        if count <= limit or time.monotonic() >= deadline:
+            return count
+        time.sleep(0.01)
+
 discard_streams()
-threads_after_first_batch = process.num_threads()
+threads_after_first_batch = wait_for_thread_count_at_most(initial_threads + 1)
 # A second batch distinguishes a per-stream leak from one-time runtime thread setup.
 discard_streams()
-assert threads_after_first_batch <= initial_threads + 1
-assert process.num_threads() <= threads_after_first_batch
+threads_after_second_batch = wait_for_thread_count_at_most(threads_after_first_batch)
+counts = (initial_threads, threads_after_first_batch, threads_after_second_batch)
+assert threads_after_first_batch <= initial_threads + 1, counts
+assert threads_after_second_batch <= threads_after_first_batch, counts
 """
     subprocess.run(
         [sys.executable, "-c", script, kind],
