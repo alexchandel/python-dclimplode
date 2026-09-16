@@ -340,7 +340,13 @@ public:
             char *buffer = nullptr;
             ssize_t length = 0;
             PYBIND11_BYTES_AS_STRING_AND_SIZE(obj.ptr(), &buffer, &length);
-            instr = std::string(buffer, length);
+            if(!threadActive){
+                instr.append(buffer, length);
+                // PKLIB requires at least five bytes in its first read.
+                if(length != 0 && instr.size() <= 4)return py::bytes();
+            }else{
+                instr.assign(buffer, length);
+            }
             hasInput.store(true);
         }
         {

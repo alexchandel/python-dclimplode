@@ -46,3 +46,10 @@ def test_chunked_decompression(type, decompressobj):
         output += decompressor.decompress(b"")
     assert decompressor.eof
     assert output == content
+
+
+def test_pklib_rejects_truncated_input():
+    decompressor = dclimplode.decompressobj_pklib()
+    assert decompressor.decompress(b"\x00") == b""
+    with pytest.raises(RuntimeError, match="explode\\(\\) error"):
+        decompressor.decompress(b"")
