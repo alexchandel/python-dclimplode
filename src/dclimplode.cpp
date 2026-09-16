@@ -61,7 +61,7 @@ public:
         requireInput(false), hasInput(false), finished(false), threadActive(false), result(0), thread(),
         offset(0), typ(typ), dsize(dsize)
     {
-        if(typ>1)throw std::invalid_argument(format("invalid type, must be 0 or 1 (%d)", typ));
+        if(typ<0 || typ>1)throw std::invalid_argument(format("invalid type, must be 0 or 1 (%d)", typ));
         if(dsize!=1024 && dsize!=2048 && dsize!=4096)throw std::invalid_argument(format("invalid dsize, must be 1024, 2048 or 4096 (%d)", dsize));
         outstr.reserve(65536);
     }
@@ -127,6 +127,7 @@ public:
             char *buffer = nullptr;
             ssize_t length = 0;
             PYBIND11_BYTES_AS_STRING_AND_SIZE(obj.ptr(), &buffer, &length);
+            if(length == 0)return py::bytes();
             instr = std::string(buffer, length);
             hasInput.store(true);
         }
@@ -232,7 +233,7 @@ public:
         thread = pthread_t();
     }
 
-    bool eof() const{return finished.load();}
+    bool eof() const{return finished.load() && result == 0;}
 
     py::bytes decompress(const py::bytes &obj){
         std::unique_lock<std::mutex> lock(apiMutex, std::try_to_lock);
@@ -329,7 +330,7 @@ public:
         thread = pthread_t();
     }
 
-    bool eof() const{return finished.load();}
+    bool eof() const{return finished.load() && result == 0;}
 
     py::bytes decompress(const py::bytes &obj){
         std::unique_lock<std::mutex> lock(apiMutex, std::try_to_lock);
@@ -342,8 +343,8 @@ public:
             PYBIND11_BYTES_AS_STRING_AND_SIZE(obj.ptr(), &buffer, &length);
             if(!threadActive){
                 instr.append(buffer, length);
-                // PKLIB requires at least five bytes in its first read.
-                if(length != 0 && instr.size() <= 4)return py::bytes();
+                // PKLIB reads the two-byte header and initial bit-buffer byte directly.
+                if(length != 0 && instr.size() < 3)return py::bytes();
             }else{
                 instr.assign(buffer, length);
             }
