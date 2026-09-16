@@ -21,15 +21,23 @@ if sys.platform == "win32":
 
 process = psutil.Process()
 initial_threads = process.num_threads()
-for _ in range(16):
-    stream = getattr(dclimplode, sys.argv[1])()
-    if sys.argv[1] == "compressobj":
-        stream.compress(b"unfinished input")
-    else:
-        stream.decompress(b"\\x00\\x06" + b"\\x00" * 32)
-        assert not stream.eof
-    del stream
-assert process.num_threads() <= initial_threads
+
+def discard_streams():
+    for _ in range(16):
+        stream = getattr(dclimplode, sys.argv[1])()
+        if sys.argv[1] == "compressobj":
+            stream.compress(b"unfinished input")
+        else:
+            stream.decompress(b"\\x00\\x06" + b"\\x00" * 32)
+            assert not stream.eof
+        del stream
+
+discard_streams()
+threads_after_first_batch = process.num_threads()
+# A second batch distinguishes a per-stream leak from one-time runtime thread setup.
+discard_streams()
+assert threads_after_first_batch <= initial_threads + 1
+assert process.num_threads() <= threads_after_first_batch
 """
     subprocess.run(
         [sys.executable, "-c", script, kind],
